@@ -1,0 +1,1 @@
+source "$BR2_EXTERNAL_VL53L1X_PATH/package/vl53l1x/Config.in"

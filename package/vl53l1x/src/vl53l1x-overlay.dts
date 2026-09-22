@@ -1,0 +1,69 @@
+/*
+ * Device tree overlay for the ST VL53L1X time-of-flight sensor on the
+ * Raspberry Pi 4's primary I2C bus.
+ *
+ * Declares the sensor at address 0x29 on i2c1 and binds its GPIO1
+ * "measurement ready" output to GPIO17 (header pin 11) as an interrupt
+ * source, so the kernel instantiates the device at boot and the
+ * driver's probe() runs automatically.
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2711";
+
+	fragment@0 {
+		target = <&i2c1>;
+		__overlay__ {
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			vl53l1x: vl53l1x@29 {
+				compatible = "st,vl53l1x";
+				reg = <0x29>;
+				pinctrl-names = "default";
+				pinctrl-0 = <&vl53l1x_pins>;
+				interrupt-parent = <&gpio>;
+
+				/*
+				 * 4 = IRQ_TYPE_LEVEL_HIGH.
+				 *
+				 * Measured on hardware rather than taken
+				 * from the datasheet, which is ambiguous
+				 * here: with a pull-down on the line, GPIO1
+				 * reads high while a measurement is pending
+				 * and drops low the instant
+				 * SYSTEM__INTERRUPT_CLEAR is written. The
+				 * output is active high, not active low.
+				 *
+				 * Level rather than edge because the line is
+				 * latched - it stays asserted until the
+				 * driver clears it. With edge triggering a
+				 * single missed edge leaves the line stuck
+				 * asserted and interrupts stop forever.
+				 */
+				interrupts = <17 4>;
+				status = "okay";
+			};
+		};
+	};
+
+	/*
+	 * GPIO17 as an input with a pull-down, so the line rests low when
+	 * the sensor is not asserting and the active high interrupt above
+	 * is unambiguous.
+	 */
+	fragment@1 {
+		target = <&gpio>;
+		__overlay__ {
+			vl53l1x_pins: vl53l1x_pins {
+				brcm,pins = <17>;
+				brcm,function = <0>;	/* input */
+				brcm,pull = <1>;	/* pull down */
+			};
+		};
+	};
+};

@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# Load the I2C bus driver and the VL53L1X module at boot. The bus
+# controller driver is built as a module and is not autoloaded on this
+# kernel, so it has to be pulled in explicitly before the sensor's
+# driver can bind.
+
+case "$1" in
+	start)
+		printf "Loading VL53L1X driver: "
+		if modprobe i2c-bcm2835 && modprobe i2c-dev && modprobe vl53l1x; then
+			echo "OK"
+		else
+			echo "FAIL"
+			exit 1
+		fi
+		;;
+	stop)
+		modprobe -r vl53l1x 2>/dev/null
+		;;
+	restart|reload)
+		"$0" stop
+		"$0" start
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart}"
+		exit 1
+		;;
+esac

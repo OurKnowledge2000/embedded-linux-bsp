@@ -1,0 +1,13 @@
+config BR2_PACKAGE_VL53L1X
+	bool "vl53l1x"
+	depends on BR2_LINUX_KERNEL
+	help
+	  Out-of-tree character device driver for the ST VL53L1X
+	  time-of-flight ranging sensor, plus the device tree overlay
+	  that binds it to I2C1 and GPIO17 on a Raspberry Pi 4.
+
+	  Exposes one measurement per open() through /dev/vl53l1x0,
+	  driven by the sensor's data-ready interrupt.
+
+comment "vl53l1x needs a Linux kernel to be built"
+	depends on !BR2_LINUX_KERNEL
